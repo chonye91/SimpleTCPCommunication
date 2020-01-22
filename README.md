@@ -1,7 +1,7 @@
 # SimpleTCPCommunication
 a very Simple, easy way to create TCP Communication, in C#.
 
-this project is not for actual project.
+this project is not for actual production projects.
 it is built for, and meant to be used as a simple Solution, when you need a simple TCP commuincation with another project.
 
 with this project you can easily establish TCP Communication and send data, with no need to make sure the other side is up and running.
