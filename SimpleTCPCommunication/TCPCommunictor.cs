@@ -15,6 +15,7 @@ namespace SimpleTCPCommunication
     public delegate void OnConnectionChangedDel(bool isConnected);
 
     #endregion
+
     /// <summary>
     /// Create with no affort a TCP Connection 
     /// </summary>
@@ -36,10 +37,19 @@ namespace SimpleTCPCommunication
         #endregion
 
         #region Properties
+        /// <summary>
+        /// The port in which the data will relay and received
+        /// </summary>
         public ushort Port { get; private set; }
 
+        /// <summary>
+        /// The Address to send the data
+        /// </summary>
         public IPAddress IP { get; private set; }
 
+        /// <summary>
+        /// Status of the connection
+        /// </summary>
         public bool IsConnected
         {
             get { return _isConnected; }
@@ -61,7 +71,7 @@ namespace SimpleTCPCommunication
         /// </summary>
         /// <param name="IsServer">true if this connection is the Server, false otherwise</param>
         /// <param name="port">the port to connect, expect <see cref="ushort"/> between 0 and 65553</param>
-        /// <param name="address">the address (in IPv4 protocol)</param>
+        /// <param name="address">the address as a <see cref="string"/>. this can be either IPv4 or IPv6 address</param>
         /// <param name="buffersize">the size of the buffer to manage</param>
         /// <param name="reconnectInterval">the <see cref="Duration"/> between reconnection attempt</param>
         /// <param name="timeout">the <see cref="Duration"/> to time-out</param>
@@ -109,6 +119,11 @@ namespace SimpleTCPCommunication
         #endregion
 
         #region API
+        /// <summary>
+        /// Send data (as <see cref="byte[]"/>).
+        /// </summary>
+        /// <remarks>this method will throw exception, in case of failure in <see cref="NetworkStream.Write(byte[], int, int)"/></remarks>
+        /// <param name="data">the binary data to send</param>
         public void Send(byte[] data)
         {
 
@@ -125,6 +140,9 @@ namespace SimpleTCPCommunication
             }
         }
 
+        /// <summary>
+        /// Close the communication
+        /// </summary>
         public void Close()
         {
             _isOpen = false;
@@ -134,7 +152,7 @@ namespace SimpleTCPCommunication
         }
         #endregion
 
-        #region private Methods
+        #region Private Methods
 
         private void CreateServer()
         {
@@ -242,9 +260,9 @@ namespace SimpleTCPCommunication
             try
             {
                 byte[] buffer = new byte[_client.ReceiveBufferSize];
-                int bytesRead = _nwStream.Read(buffer, 0, _client.ReceiveBufferSize);
+                _nwStream.Read(buffer, 0, _client.ReceiveBufferSize);
 
-                OnDataArrived?.Invoke(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                OnDataArrived?.Invoke(buffer);
             }
             catch (Exception)
             {
@@ -272,9 +290,7 @@ namespace SimpleTCPCommunication
             try
             {
                 _client = _listener.AcceptTcpClient();
-                _client.ReceiveBufferSize = 64000000;
-                _client.SendBufferSize = 64000000;
-                _nwStream = _client.GetStream();
+                ResetClient();
             }
             catch (Exception)
             {
@@ -285,7 +301,23 @@ namespace SimpleTCPCommunication
 
         private void RestartClient()
         {
+            try
+            {
+                _client = new TcpClient(IP.ToString(), Port);
+                ResetClient();
+            }
+            catch (Exception)
+            {
 
+                throw;
+            }
+        }
+
+        private void ResetClient()
+        {
+            _client.ReceiveBufferSize = (int)_bufferSize.Bytes;
+            _client.SendBufferSize = (int)_bufferSize.Bytes;
+            _nwStream = _client.GetStream();
         }
 
         public void Dispose()
